@@ -98,11 +98,6 @@ tasks {
 		}
 	}
 
-	register<Test>("unit_tests_only") {
-		exclude(integrationTestClassesPattern)
-		group = "verification"
-	}
-
 	compileTestGroovy {
 		dependsOn(compileTestKotlin)
 		classpath += files(compileTestKotlin.get().destinationDirectory)
