@@ -26,6 +26,10 @@ data class CombinationResult(
      * columns for Food, Grams, then each Amino acid with its mg/100g and total mg.
      */
     override fun toString(): String {
+        //TODO add total of weight
+        //TODO add table borders, like sql resultset
+        //TODO cleanCode : aaList fuj co to je za nazev
+        //TODO use bigdecimals, reuse logic from calculation
         val aaList = AminoAcid.values()
         val sb = StringBuilder()
         // Header: Food | g | for each amino: mg/100g and total mg

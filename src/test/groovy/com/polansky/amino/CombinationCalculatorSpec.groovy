@@ -45,4 +45,21 @@ class CombinationCalculatorSpec extends Specification {
         then:
         combos.every { it.totalMgByAmino()[AminoAcid.PROTEIN] >= 70_000 }
     }
+
+    def "finds combos using chickjepas, rice, oats, eggs"() {
+        given:
+
+        def input = new UserInput([
+                new FoodAmountConstraint(new Chickpeas(), 70, 70),
+                new FoodAmountConstraint(new Rice(), 50, 50),
+                new FoodAmountConstraint(new Oats(), 50, 450),
+                new FoodAmountConstraint(new Eggs(), 50, 50),
+        ], 5)
+
+        when:
+        def combos = new CombinationCalculator().findCombinations(input)
+
+        then:
+        combos.every { it.totalMgByAmino()[AminoAcid.PROTEIN] >= 55_000 }
+    }
 }

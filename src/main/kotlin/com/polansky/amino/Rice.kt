@@ -3,25 +3,26 @@ package com.polansky.amino
 
 class Rice : Food() {
     override val name = "Rice"
-    override val histidineMgPer100g: Int
-        get() = TODO("Not yet implemented")
-    override val isoleucineMgPer100g: Int
-        get() = TODO("Not yet implemented")
-    override val leucineMgPer100g: Int
-        get() = TODO("Not yet implemented")
-    override val lysineMgPer100g: Int
-        get() = TODO("Not yet implemented")
-    override val methionineMgPer100g: Int
-        get() = TODO("Not yet implemented")
-    override val phenylalanineMgPer100g: Int
-        get() = TODO("Not yet implemented")
-    override val threonineMgPer100g: Int
-        get() = TODO("Not yet implemented")
-    override val tryptophanMgPer100g: Int
-        get() = TODO("Not yet implemented")
-    override val valineMgPer100g: Int
-        get() = TODO("Not yet implemented")
-    override val proteinMgPer100g: Int
-        get() = TODO("Not yet implemented")
+    override val histidineMgPer100g = 168
+    override val isoleucineMgPer100g = 308
+    override val leucineMgPer100g = 589
+    override val lysineMgPer100g = 258
+    override val methionineMgPer100g = 168
+    override val phenylalanineMgPer100g = 381
+    override val threonineMgPer100g = 255
+    override val tryptophanMgPer100g = 83
+    override val valineMgPer100g = 435
+    override val proteinMgPer100g = 6_000
+
+
+
+
+
+
+
+
+
+
+
 
 }
