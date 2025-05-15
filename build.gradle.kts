@@ -55,7 +55,9 @@ dependencies {
 //	kapt("jakarta.persistence:jakarta.persistence-api")
 //	kapt("jakarta.annotation:jakarta.annotation-api")
 
-
+//WEB
+	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
 	// Database
 //	runtimeOnly("com.microsoft.sqlserver:mssql-jdbc")
