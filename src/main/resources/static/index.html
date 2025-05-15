@@ -1,15 +1,258 @@
+<!--
+Save this file as index.html
+
+To run locally:
+1. In a terminal, navigate to the folder containing this file.
+2. Run: python3 -m http.server 8000
+3. Open http://localhost:8000 in your browser.
+Ensure your backend is running on http://localhost:3000
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Spring Boot + Kotlin Demo</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amino Acid Calculator</title>
+    <style>
+        /* Minimalist CSS */
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            padding: 1rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .form-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .form-group input,
+        .form-group button {
+            font-size: 1rem;
+        }
+        .food-input {
+            flex: 1 1 100%;
+        }
+        .range-input {
+            width: 4.5rem;
+        }
+        button {
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border: none;
+            background: #0077cc;
+            color: white;
+            border-radius: 4px;
+        }
+        button[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .suggestions {
+            border: 1px solid #ccc;
+            border-top: none;
+            position: absolute;
+            background: white;
+            width: calc(100% - 2rem);
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .suggestions div {
+            padding: 0.5rem;
+        }
+        .suggestions div:hover {
+            background: #f0f0f0;
+        }
+        .results {
+            margin-top: 2rem;
+        }
+        .result-card {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+    </style>
 </head>
 <body>
-<h1>Welcome!</h1>
-<button id="btn">Fetch Greeting</button>
-<p id="output"></p>
+<h1>Amino Acid Calculator</h1>
+<div id="app">
+    <div id="input-section">
+        <div id="food-list"></div>
+        <button id="add-food-btn">Add Food</button>
+        <button id="calculate-btn">Calculate Combinations</button>
+    </div>
+    <div class="results" id="results-section"></div>
+</div>
+<script>
+    const maxFoods = 7;
+    let foodCount = 0;
+    const selectedFoods = [];
 
-<script src="app.js"></script>
+    const foodListEl = document.getElementById('food-list');
+    const addFoodBtn = document.getElementById('add-food-btn');
+    const calculateBtn = document.getElementById('calculate-btn');
+    const resultsSection = document.getElementById('results-section');
+
+    function createFoodInputs() {
+        if (foodCount >= maxFoods) return;
+        const idx = foodCount++;
+        const container = document.createElement('div');
+        container.className = 'form-group';
+        container.id = `food-group-${idx}`;
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.placeholder = 'Type food name';
+        nameInput.className = 'food-input';
+        nameInput.autocomplete = 'off';
+        nameInput.addEventListener('input', debounce(e => fetchSuggestions(e.target.value, idx), 300));
+
+        const suggestionsBox = document.createElement('div');
+        suggestionsBox.id = `suggestions-${idx}`;
+        suggestionsBox.style.display = 'none';
+        suggestionsBox.className = 'suggestions';
+
+        const minInput = document.createElement('input');
+        minInput.type = 'number';
+        minInput.step = '5';
+        minInput.min = '0';
+        minInput.placeholder = 'Min g';
+        minInput.className = 'range-input';
+
+        const maxInput = document.createElement('input');
+        maxInput.type = 'number';
+        maxInput.step = '5';
+        maxInput.min = '0';
+        maxInput.placeholder = 'Max g';
+        maxInput.className = 'range-input';
+
+        container.append(nameInput, suggestionsBox, minInput, maxInput);
+        foodListEl.appendChild(container);
+    }
+
+    addFoodBtn.addEventListener('click', createFoodInputs);
+
+    function debounce(fn, delay) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => fn(...args), delay);
+        };
+    }
+
+    async function fetchSuggestions(query, idx) {
+        if (!query) {
+            toggleSuggestions(idx, []);
+            return;
+        }
+        try {
+            const res = await fetch(`http://localhost:8080/api/foods?suggest=${encodeURIComponent(query)}`);
+            const foods = await res.json();
+            toggleSuggestions(idx, foods);
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function toggleSuggestions(idx, foods) {
+        const box = document.getElementById(`suggestions-${idx}`);
+        box.innerHTML = '';
+        if (!foods.length) {
+            box.style.display = 'none';
+            return;
+        }
+        foods.forEach(food => {
+            const div = document.createElement('div');
+            div.textContent = food.name;
+            div.addEventListener('click', () => selectSuggestion(idx, food));
+            box.appendChild(div);
+        });
+        box.style.display = 'block';
+    }
+
+    function selectSuggestion(idx, food) {
+        const container = document.getElementById(`food-group-${idx}`);
+        const nameInput = container.querySelector('input.food-input');
+        nameInput.value = food.name;
+        container.dataset.foodId = food.id;
+        document.getElementById(`suggestions-${idx}`).style.display = 'none';
+    }
+
+    calculateBtn.addEventListener('click', async () => {
+        const foods = [];
+        for (let i = 0; i < foodCount; i++) {
+            const container = document.getElementById(`food-group-${i}`);
+            const id = container.dataset.foodId;
+            const name = container.querySelector('input.food-input').value;
+            const min = parseInt(container.querySelector('input[placeholder="Min g"]').value);
+            const max = parseInt(container.querySelector('input[placeholder="Max g"]').value);
+            if (id && name && !isNaN(min) && !isNaN(max)) {
+                foods.push({ id, name, min, max });
+            }
+        }
+        if (!foods.length) return;
+        try {
+            const res = await fetch('http://localhost:8080/api/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ foods })
+            });
+            const results = await res.json();
+            displayResults(results);
+        } catch (err) {
+            console.error(err);
+        }
+    });
+
+    function displayResults(results) {
+        // 1. Clear any existing content
+        resultsSection.innerHTML = '';
+
+        // 2. Loop through each combination object
+        results.forEach((combo, i) => {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+
+            // 3. Create an expandable details section
+            const details = document.createElement('details');
+            const summary = document.createElement('summary');
+
+            // ← FIX: map over combo.foods, not combo directly
+            summary.textContent =
+                `Result ${i + 1}: ` +
+                combo.foods
+                    .map(f => `${f.name} ${f.amount}g`)
+                    .join(', ');
+
+            details.appendChild(summary);
+
+            // 4. Build the amino acid breakdown list
+            const dl = document.createElement('dl');
+            combo.aminoAcids.forEach(a => {
+                const dt = document.createElement('dt');
+                dt.textContent = `${a.name}:`;
+                const dd = document.createElement('dd');
+                dd.textContent = `${a.total}g (${a.rdaPercent}% RDA)`;
+                dl.append(dt, dd);
+            });
+
+            details.appendChild(dl);
+            card.appendChild(details);
+            resultsSection.appendChild(card);
+        });
+    }
+    // Initialize with 1 food input
+    createFoodInputs();
+</script>
 </body>
 </html>

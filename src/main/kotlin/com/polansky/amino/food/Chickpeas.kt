@@ -1,7 +1,10 @@
-package com.polansky.amino
+package com.polansky.amino.food
 
+import org.springframework.stereotype.Component
 
+@Component
 class Chickpeas : Food() {
+    override val id = 1L
     override val name = "Chickpeas"
     override val histidineMgPer100g = 566
     override val isoleucineMgPer100g = 882

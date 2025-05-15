@@ -1,5 +1,7 @@
 package com.polansky.amino
 
+import com.polansky.amino.food.Food
+
 /**
  * Represents one valid food combination.
  * Stores grams (g) per food and computes total amino acids in mg.

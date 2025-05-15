@@ -1,5 +1,7 @@
 package com.polansky.amino
 
+import com.polansky.amino.food.Food
+
 
 /**
  * Defines minimum and maximum food intake, in grams (g).

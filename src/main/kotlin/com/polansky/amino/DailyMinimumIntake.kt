@@ -14,6 +14,7 @@ object DailyMinimumIntake {
         AminoAcid.TRYPTOPHAN to 280.0,
         AminoAcid.VALINE to 1_820.0,
         AminoAcid.TRYPTOPHAN to 280.0,
+        AminoAcid.PHENYLALANINE to 1_750.0,
         AminoAcid.PROTEIN to 55_000.0,
         //https://www.nal.usda.gov/human-nutrition-and-food-safety/dri-calculator/results
         //https://www.health.harvard.edu/blog/how-much-protein-do-you-need-every-day-201506188096

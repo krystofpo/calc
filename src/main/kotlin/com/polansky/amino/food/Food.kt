@@ -1,5 +1,6 @@
-package com.polansky.amino
+package com.polansky.amino.food
 
+import com.polansky.amino.AminoAcid
 import com.polansky.amino.AminoAcid.*
 
 /**
@@ -7,6 +8,7 @@ import com.polansky.amino.AminoAcid.*
  * Subclasses must override each amino's mg per 100g.
  */
 abstract class Food {
+    abstract val id: Long //TODO how to assert uniquness? entities? hashcode?
     abstract val name: String
     abstract val histidineMgPer100g: Int
     abstract val isoleucineMgPer100g: Int

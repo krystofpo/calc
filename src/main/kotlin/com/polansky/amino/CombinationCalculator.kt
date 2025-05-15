@@ -1,6 +1,7 @@
 package com.polansky.amino
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 
@@ -12,6 +13,7 @@ val MAX_DURATION = TimeUnit.SECONDS.toMillis(15)
  * Iterates combinations of foods (treated like an odometer based on the list
  * of FoodAmountConstraint) to find ones meeting the daily minima.
  */
+@Service
 class CombinationCalculator {
 
     fun findCombinations(input: UserInput): List<CombinationResult> {

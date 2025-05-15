@@ -1,5 +1,9 @@
 package com.polansky.amino
 
+import com.polansky.amino.food.Chickpeas
+import com.polansky.amino.food.Eggs
+import com.polansky.amino.food.Oats
+import com.polansky.amino.food.Rice
 import spock.lang.Specification
 
 class CombinationCalculatorSpec extends Specification {

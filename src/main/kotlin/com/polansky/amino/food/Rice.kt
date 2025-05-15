@@ -1,7 +1,10 @@
-package com.polansky.amino
+package com.polansky.amino.food
 
+import org.springframework.stereotype.Component
 
+@Component
 class Rice : Food() {
+    override val id = 4L
     override val name = "Rice"
     override val histidineMgPer100g = 168
     override val isoleucineMgPer100g = 308
