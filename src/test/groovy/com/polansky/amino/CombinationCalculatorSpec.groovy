@@ -1,10 +1,13 @@
 package com.polansky.amino
 
+import com.polansky.amino.food.Buckwheat
 import com.polansky.amino.food.Chickpeas
 import com.polansky.amino.food.Eggs
 import com.polansky.amino.food.Oats
 import com.polansky.amino.food.Rice
 import spock.lang.Specification
+
+import static com.polansky.amino.AminoAcid.PROTEIN
 
 class CombinationCalculatorSpec extends Specification {
     def "returns empty if maxGrams can’t meet minima"() {
@@ -23,7 +26,7 @@ class CombinationCalculatorSpec extends Specification {
 
     def "finds combos using concrete food classes"() {
         given:
-        DailyMinimumIntake.minimumMgPerAmino = [(AminoAcid.PROTEIN): 300.0]
+        DailyMinimumIntake.minimumMgPerAmino = [(PROTEIN): 300.0]
         def a = new Rice()
         def input = new UserInput([
                 new FoodAmountConstraint(a, 1, 10)
@@ -33,7 +36,7 @@ class CombinationCalculatorSpec extends Specification {
         def combos = new CombinationCalculator().findCombinations(input)
 
         then:
-        combos.every { it.totalMgByAmino()[AminoAcid.PROTEIN] >= 300.0 }
+        combos.every { it.totalMgByAmino()[PROTEIN] >= 300.0 }
     }
 
     def "finds combos using chickjepas"() {
@@ -47,7 +50,7 @@ class CombinationCalculatorSpec extends Specification {
         def combos = new CombinationCalculator().findCombinations(input)
 
         then:
-        combos.every { it.totalMgByAmino()[AminoAcid.PROTEIN] >= 70_000 }
+        combos.every { it.totalMgByAmino()[PROTEIN] >= 70_000 }
     }
 
     def "finds combos using chickjepas, rice, oats, eggs"() {
@@ -64,6 +67,24 @@ class CombinationCalculatorSpec extends Specification {
         def combos = new CombinationCalculator().findCombinations(input)
 
         then:
-        combos.every { it.totalMgByAmino()[AminoAcid.PROTEIN] >= 55_000 }
+        combos.every { it.totalMgByAmino()[PROTEIN] >= DailyMinimumIntake.INSTANCE.minimumMgPerAmino[PROTEIN] }
     }
+
+    def "finds combos using buckwheat, eggs"() {
+        given:
+
+        def input = new UserInput([
+                new FoodAmountConstraint(new Buckwheat(), 150, 150),
+                new FoodAmountConstraint(new Eggs(), 50, 50),
+                new FoodAmountConstraint(new Oats(), 50, 500),
+        ], 5)
+
+        when:
+        def combos = new CombinationCalculator().findCombinations(input)
+
+        then:
+        combos.every { it.totalMgByAmino()[PROTEIN] >= 55_000 }
+    }
+
+
 }

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 class Rice : Food() {
     override val id = 4L
     override val name = "Rice"
+    override val link = ""
     override val histidineMgPer100g = 168
     override val isoleucineMgPer100g = 308
     override val leucineMgPer100g = 589

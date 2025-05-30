@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 class Eggs : Food() {
     override val id = 2L
     override val name = "Eggs, raw (one egg=50g)"
+    override val link = ""
     override val histidineMgPer100g =335
     override val isoleucineMgPer100g =728
     override val leucineMgPer100g =1_180

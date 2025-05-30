@@ -10,6 +10,7 @@ import com.polansky.amino.AminoAcid.*
 abstract class Food {
     abstract val id: Long //TODO how to assert uniquness? entities? hashcode?
     abstract val name: String
+    abstract val link: String
     abstract val histidineMgPer100g: Int
     abstract val isoleucineMgPer100g: Int
     abstract val leucineMgPer100g: Int

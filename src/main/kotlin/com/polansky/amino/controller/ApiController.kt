@@ -22,10 +22,7 @@ class ApiController(val appService: AppService) {
     fun suggest(@RequestParam suggest: String): List<FoodDto> { //TODO url params
         log.info { "/api/foods?suggest=$suggest" }
 
-        return listOf(
-            FoodDto(4, "rice"),
-            FoodDto(3, "oats")
-        )
+        return appService.suggest(suggest)
     }
 
     @PostMapping("calculate")

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 class Chickpeas : Food() {
     override val id = 1L
     override val name = "Chickpeas"
+    override val link = "https://fdc.nal.usda.gov/food-details/173756/nutrients"
     override val histidineMgPer100g = 566
     override val isoleucineMgPer100g = 882
     override val leucineMgPer100g = 1_460

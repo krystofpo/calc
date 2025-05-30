@@ -3,6 +3,7 @@ package com.polansky.amino.app
 import com.polansky.amino.*
 import com.polansky.amino.controller.CalcFoodDto
 import com.polansky.amino.controller.CalculateDto
+import com.polansky.amino.controller.FoodDto
 import com.polansky.amino.food.Food
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -76,6 +77,11 @@ class AppService(
         }
 
         return ResultDto(foods = foods, aminoAcids = aminoAcids)
+    }
+
+    fun suggest(suggest: String): List<FoodDto> {
+        return allFoods.filter { it.name.contains(suggest, true) }
+            .map { FoodDto(it.id, it.name) }
     }
 
 }
