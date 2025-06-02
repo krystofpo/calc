@@ -1,0 +1,18 @@
+<!-- src/main/resources/templates/home.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Home</title>
+</head>
+<body>
+<h1>Home Page</h1>
+
+<!-- If there’s a flash attribute "welcomeMessage", show it -->
+<div th:if="${welcomeMessage}">
+    <p th:text="${welcomeMessage}"></p>
+</div>
+
+<p>This is the protected homepage (in real life, you’d guard it behind a login). </p>
+</body>
+</html>
