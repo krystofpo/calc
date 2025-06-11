@@ -64,9 +64,9 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 
 	//JWT
-//	implementation("io.jsonwebtoken:jjwt-api:0.12.5")
-//	implementation("io.jsonwebtoken:jjwt-impl:0.12.5")
-//	implementation("io.jsonwebtoken:jjwt-jackson:0.12.5")
+	implementation("io.jsonwebtoken:jjwt-api:0.12.5")
+	implementation("io.jsonwebtoken:jjwt-impl:0.12.5")
+	implementation("io.jsonwebtoken:jjwt-jackson:0.12.5")
 
 	// Database
 //	runtimeOnly("com.microsoft.sqlserver:mssql-jdbc")
@@ -83,7 +83,7 @@ dependencies {
 	testImplementation("io.github.joke:spock-mockable:2.3.2")
 	testImplementation("io.netty:netty-handler:4.1.117.Final")
 	testImplementation("org.bouncycastle:bcpkix-jdk18on:1.80")
-//	testImplementation("org.codehaus.groovy:groovy-json:3.0.25")
+	testImplementation("org.apache.groovy:groovy-json:4.0.22")
 }
 
 springBoot {

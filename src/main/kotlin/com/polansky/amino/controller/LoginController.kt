@@ -1,8 +1,9 @@
 package com.polansky.amino.controller
 
-import com.polansky.amino.service.LoginResult
 import com.polansky.amino.service.LoginResult.*
 import com.polansky.amino.service.LoginService
+import jakarta.servlet.http.Cookie
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
@@ -11,46 +12,65 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.servlet.mvc.support.RedirectAttributes
 
+const val loginUrl = "login"
+const val rootUrl = "api/v1"
+const val homeUrl = "home"
+
 
 @Controller
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/$rootUrl/auth")
 class LoginController(val loginService: LoginService) {
 
 
-    @GetMapping("/login")
+    @GetMapping("/$loginUrl")
     fun showLoginForm(): String {
-        return "login"
+        return loginUrl
     }
 
-    @PostMapping("/login")
+    @PostMapping("/$loginUrl")
     fun processLogin(
         @RequestParam("email") email: String,
         @RequestParam("password") password: String,
+        response: HttpServletResponse,
         model: Model,
         redirectAttrs: RedirectAttributes
     ): String {
         val result = loginService.tryLogin(email, password)
         return when (result) {
             OK -> {
-                redirectAttrs.addFlashAttribute("welcomeMessage", "Success")
-                "redirect:/api/v1/home"
+                setJwtCookieAndRedirect(response)
             }
 
             BLANK_EMAIL, BLANK_PASSWORD -> {
-                model.addAttribute("errorMessage", "Non empty email and password are required.")
-                "login"
+                addErrorMessageAndReturnLoginViewName(model, "Email and password must not be blank.")
             }
 
             UNKNOWN_EMAIL -> {
-                model.addAttribute("errorMessage", "Unknown email.")
-                "login"
+                addErrorMessageAndReturnLoginViewName(model,"Unknown email.")
             }
 
             WRONG_PASSWORD -> {
-                model.addAttribute("errorMessage", "Wrong password.")
-                "login"
+                addErrorMessageAndReturnLoginViewName(model, "Wrong password.")
             }
         }
+    }
+
+    private fun setJwtCookieAndRedirect(response: HttpServletResponse): String {
+        //TODO dodelat hodnoty do cookie
+        val cookie = Cookie("accessToken", "TODO").apply { // cookie name & value
+            isHttpOnly = true  // JS can’t read it
+            secure = true // only over HTTPS
+            path = "/" // valid across your app
+            maxAge = 3600   // matches your token lifetime
+        }
+        cookie.setAttribute("SameSite", "Strict") // CSRF protection
+        response.addCookie(cookie)
+        return "redirect:/$rootUrl/$homeUrl"
+    }
+
+    private fun addErrorMessageAndReturnLoginViewName(model: Model, errorMessage: String): String {
+        model.addAttribute("errorMessage", errorMessage)
+        return loginUrl
     }
 
 }

@@ -1,5 +1,10 @@
 package com.polansky.amino.controller
 
+import groovy.json.JsonSlurper
+import io.jsonwebtoken.Claims
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.security.Keys
+
 import com.polansky.amino.entity.User
 import com.polansky.amino.service.LoginResult
 import com.polansky.amino.service.LoginService
@@ -7,7 +12,9 @@ import org.spockframework.spring.SpringBean
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.http.HttpHeaders
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.ResultActions
 import spock.lang.Specification
 
 import static com.polansky.amino.service.LoginResult.BLANK_EMAIL
@@ -27,7 +34,7 @@ class LoginControllerSpec extends Specification {
     LoginService loginService = Mock()
 
 
-    def "when credentials are valid, redirect to home page"() {
+    def "when credentials are valid, redirect to home page and set JWT token into cookie"() {
         given:
         String email = "user@example.com"
         String password = "password123"
@@ -39,9 +46,18 @@ class LoginControllerSpec extends Specification {
                 .param("email", email)
                 .param("password", password))
 
-        then: "the server responds with a redirect"
-        response.andExpect(status().is3xxRedirection())
+        then: "the server responds with a redirect and issues a JWT"
+        def result = response.andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/api/v1/home"))
+                .andExpect(header().exists(HttpHeaders.SET_COOKIE))
+                .andReturn()
+
+        String setCookie = result.response.getHeader(HttpHeaders.SET_COOKIE)
+        setCookie.contains("accessToken=")             // cookie name & value
+        setCookie.contains("HttpOnly")                 // JS can’t read it
+        setCookie.contains("Secure")                   // only over HTTPS
+        setCookie.contains("Max-Age=")             // matches your token lifetime
+        setCookie.contains("Path=/")                   // valid across your app
     }
 
     def "when credentials are wrong, render login view with errorMessage"() {
