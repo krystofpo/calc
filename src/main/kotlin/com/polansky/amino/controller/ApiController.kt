@@ -2,7 +2,7 @@ package com.polansky.amino.controller
 
 
 import com.polansky.amino.app.AppService
-import com.polansky.amino.app.ResultDto
+import com.polansky.amino.app.CombinationTableDto
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -26,9 +26,9 @@ class ApiController(val appService: AppService) {
     }
 
     @PostMapping("calculate")
-    fun calculate(@RequestBody calculateDto: CalculateDto): List<ResultDto> {
+    fun calculate(@RequestBody calculateDto: CalculateDto): List<CombinationTableDto> {
         log.info { "$calculateDto" }
-        return appService.calculate(calculateDto)
+        return appService.calculateTable(calculateDto)
     }
 }
 

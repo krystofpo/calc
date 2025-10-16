@@ -21,6 +21,16 @@ class AppService(
         return combinations.map { toResultDto(it) }
     }
 
+    /**
+     * New: produce table-shaped results optimized for frontend rendering
+     * Rows = foods, Columns = amino acids (including PROTEIN), Totals = sum mg per amino.
+     */
+    fun calculateTable(calculateDto: CalculateDto): List<CombinationTableDto> {
+        val userInput = getUserInput(calculateDto)
+        val combinations = combinationCalculator.findCombinations(userInput)
+        return combinations.map { toTableDto(it) }
+    }
+
     private fun getUserInput(calculateDto: CalculateDto): UserInput {
         return UserInput(
             calculateDto.foods.map { toConstraint(it) },
@@ -77,6 +87,43 @@ class AppService(
         }
 
         return ResultDto(foods = foods, aminoAcids = aminoAcids)
+    }
+
+    private fun toTableDto(cr: CombinationResult): CombinationTableDto {
+        val aminoOrder = AminoAcid.values().map { it.name } // include PROTEIN
+        val rows = cr.gramsByFood.map { (food, grams) ->
+            val mgByAmino = mutableMapOf<String, Double>()
+            AminoAcid.values().forEach { aa ->
+                val mgPer100 = food.mgPer100g[aa]?.toDouble() ?: 0.0
+                val totalMg = mgPer100 * grams / 100.0
+                mgByAmino[aa.name] = totalMg
+            }
+            FoodRowDto(
+                id = food.id,
+                name = food.name,
+                grams = grams,
+                mgByAmino = mgByAmino
+            )
+        }
+
+        val totalsByAminoAcid = cr.totalMgByAmino()
+        val totalsMap = LinkedHashMap<String, Double>(aminoOrder.size)
+        AminoAcid.values().forEach { aa ->
+            totalsMap[aa.name] = totalsByAminoAcid[aa] ?: 0.0
+        }
+
+        // RDA per amino in mg for percentage
+        val rdaMap = LinkedHashMap<String, Double>(aminoOrder.size)
+        AminoAcid.values().forEach { aa ->
+            rdaMap[aa.name] = DailyMinimumIntake.minimumMgPerAmino[aa] ?: 0.0
+        }
+
+        return CombinationTableDto(
+            aminoColumns = aminoOrder,
+            rows = rows,
+            totals = TotalsRowDto(totalMgByAmino = totalsMap),
+            rdaMgByAmino = rdaMap
+        )
     }
 
     fun suggest(suggest: String): List<FoodDto> {

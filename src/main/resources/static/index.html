@@ -14,25 +14,27 @@ Ensure your backend is running on http://localhost:3000
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Amino Acid Calculator</title>
     <style>
-        /* Minimalist CSS */
         body {
-            font-family: system-ui, sans-serif;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
             margin: 0;
             padding: 1rem;
-            max-width: 600px;
+            max-width: 1100px;
             margin-left: auto;
             margin-right: auto;
-            color: #333;
+            color: #0f172a;
+            background: #f8fafc;
         }
         h1 {
             text-align: center;
             margin-bottom: 1rem;
+            font-weight: 700;
         }
         .form-group {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
             margin-bottom: 1rem;
+            position: relative;
         }
         .form-group input,
         .form-group button {
@@ -40,46 +42,114 @@ Ensure your backend is running on http://localhost:3000
         }
         .food-input {
             flex: 1 1 100%;
+            padding: 0.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
         }
         .range-input {
-            width: 4.5rem;
+            width: 5.2rem;
+            padding: 0.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
         }
         button {
             cursor: pointer;
-            padding: 0.5rem 1rem;
+            padding: 0.6rem 1rem;
             border: none;
-            background: #0077cc;
+            background: #2563eb;
             color: white;
-            border-radius: 4px;
+            border-radius: 6px;
+            transition: background 0.15s ease;
         }
+        button:hover { background: #1d4ed8; }
         button[disabled] {
             opacity: 0.5;
             cursor: not-allowed;
         }
         .suggestions {
-            border: 1px solid #ccc;
+            border: 1px solid #94a3b8;
             border-top: none;
             position: absolute;
             background: white;
-            width: calc(100% - 2rem);
-            max-height: 150px;
+            width: calc(100% - 2px);
+            max-height: 180px;
             overflow-y: auto;
             z-index: 1000;
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
         }
         .suggestions div {
-            padding: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
         }
         .suggestions div:hover {
-            background: #f0f0f0;
+            background: #f1f5f9;
         }
         .results {
             margin-top: 2rem;
         }
         .result-card {
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
             padding: 1rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
+            background: white;
+            box-shadow: 0 6px 18px rgba(2, 8, 23, 0.03);
+        }
+        .result-card h2 {
+            margin: 0 0 0.75rem;
+            font-size: 1.1rem;
+            color: #0f172a;
+        }
+        table.combo-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-variant-numeric: tabular-nums;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        table.combo-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+            color: #334155;
+            padding: 8px 10px;
+            text-align: right;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        table.combo-table thead th:first-child { text-align: left; }
+        table.combo-table thead th:nth-child(2) { text-align: right; }
+        table.combo-table tbody td,
+        table.combo-table tfoot td {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 8px 10px;
+            text-align: right;
+            background: transparent; /* let row background show through */
+        }
+        /* Remove zebra striping so the whole row can have the same color dynamically */
+        /* table.combo-table tbody tr:nth-child(odd) td { background: #fbfdff; } */
+        table.combo-table td.food {
+            text-align: left;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        table.combo-table tfoot td {
+            background: #f1f5f9;
+            font-weight: 700;
+        }
+        .chip {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            color: #0f172a;
+            font-size: 0.85rem;
+            margin-left: 6px;
         }
     </style>
 </head>
@@ -96,7 +166,6 @@ Ensure your backend is running on http://localhost:3000
 <script>
     const maxFoods = 7;
     let foodCount = 0;
-    const selectedFoods = [];
 
     const foodListEl = document.getElementById('food-list');
     const addFoodBtn = document.getElementById('add-food-btn');
@@ -214,43 +283,122 @@ Ensure your backend is running on http://localhost:3000
         }
     });
 
+    // Build and render a combination table from CombinationTableDto
+    function renderCombinationTable(combo) {
+        const table = document.createElement('table');
+        table.className = 'combo-table';
+
+        // Header: Food | Amount | Amino columns
+        const thead = document.createElement('thead');
+        const htr = document.createElement('tr');
+        ['Food', 'Amount', ...combo.aminoColumns].forEach(label => {
+            const th = document.createElement('th');
+            th.textContent = label;
+            htr.appendChild(th);
+        });
+        thead.appendChild(htr);
+        table.appendChild(thead);
+
+        // Color scale helper 0..1 => red→green
+        function pctColor(p) {
+            const t = Math.max(0, Math.min(1, p));
+            const r = Math.round(255 * (1 - t));
+            const g = Math.round(180 * t);
+            return `rgb(${r},${g},120)`;
+        }
+
+        // Determine baseline for row coloring using PROTEIN share
+        const maxRowProtein = combo.rows.reduce((m, r) => {
+            const v = r.mgByAmino['PROTEIN'] || 0;
+            return Math.max(m, v);
+        }, 0);
+
+        // Body rows
+        const tbody = document.createElement('tbody');
+        combo.rows.forEach(row => {
+            const tr = document.createElement('tr');
+
+            // Uniform row color based on protein proportion
+            const rowProtein = row.mgByAmino['PROTEIN'] || 0;
+            if (maxRowProtein > 0) {
+                const p = rowProtein / maxRowProtein;
+                tr.style.background = pctColor(p);
+            }
+
+            // Food name
+            const tdf = document.createElement('td');
+            tdf.className = 'food';
+            tdf.textContent = row.name;
+            tr.appendChild(tdf);
+
+            // Amount with " g"
+            const tdg = document.createElement('td');
+            tdg.textContent = `${row.grams} g`;
+            tr.appendChild(tdg);
+
+            // Amino/protein values in grams with " g"
+            combo.aminoColumns.forEach(a => {
+                const mg = row.mgByAmino[a] ?? 0;
+                const grams = mg / 1000;
+                const td = document.createElement('td');
+                td.textContent = `${grams.toFixed(2)} g`;
+                tr.appendChild(td);
+            });
+
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+
+        // Totals row
+        const tfoot = document.createElement('tfoot');
+        const trt = document.createElement('tr');
+
+        // First column: "Total"
+        const tlabel = document.createElement('td');
+        tlabel.textContent = 'Total';
+        trt.appendChild(tlabel);
+
+        // Amount column: sum of grams with " g"
+        const totalGrams = combo.rows.reduce((sum, r) => sum + (r.grams || 0), 0);
+        const tAmount = document.createElement('td');
+        tAmount.textContent = `${totalGrams} g`;
+        trt.appendChild(tAmount);
+
+        // Amino/protein totals in grams with " g" and % of daily minimum intake
+        combo.aminoColumns.forEach(a => {
+            const mg = combo.totals.totalMgByAmino[a] ?? 0;
+            const grams = mg / 1000;
+            const rdaMg = (combo.rdaMgByAmino && combo.rdaMgByAmino[a]) ? combo.rdaMgByAmino[a] : 0;
+            const pct = rdaMg > 0 ? Math.round((mg / rdaMg) * 100) : 0;
+            const td = document.createElement('td');
+            td.textContent = `${grams.toFixed(2)} g (${pct}%)`;
+            trt.appendChild(td);
+        });
+
+        tfoot.appendChild(trt);
+        table.appendChild(tfoot);
+
+        return table;
+    }
+
     function displayResults(results) {
-        // 1. Clear any existing content
         resultsSection.innerHTML = '';
 
-        // 2. Loop through each combination object
         results.forEach((combo, i) => {
             const card = document.createElement('div');
             card.className = 'result-card';
 
-            // 3. Create an expandable details section
-            const details = document.createElement('details');
-            const summary = document.createElement('summary');
+            const header = document.createElement('h2');
+            header.textContent = `Combination ${i + 1}`;
 
-            // ← FIX: map over combo.foods, not combo directly
-            summary.textContent =
-                `Result ${i + 1}: ` +
-                combo.foods
-                    .map(f => `${f.name} ${f.amount}g`)
-                    .join(', ');
+            const table = renderCombinationTable(combo);
 
-            details.appendChild(summary);
-
-            // 4. Build the amino acid breakdown list
-            const dl = document.createElement('dl');
-            combo.aminoAcids.forEach(a => {
-                const dt = document.createElement('dt');
-                dt.textContent = `${a.name}:`;
-                const dd = document.createElement('dd');
-                dd.textContent = `${a.total}g (${a.rdaPercent}% RDA)`;
-                dl.append(dt, dd);
-            });
-
-            details.appendChild(dl);
-            card.appendChild(details);
+            card.appendChild(header);
+            card.appendChild(table);
             resultsSection.appendChild(card);
         });
     }
+
     // Initialize with 1 food input
     createFoodInputs();
 </script>
