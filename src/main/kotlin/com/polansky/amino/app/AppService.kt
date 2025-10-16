@@ -24,11 +24,24 @@ class AppService(
     /**
      * New: produce table-shaped results optimized for frontend rendering
      * Rows = foods, Columns = amino acids (including PROTEIN), Totals = sum mg per amino.
+     * If no combination is found or an error occurs, returns a single table built from max grams as a diagnostic.
      */
     fun calculateTable(calculateDto: CalculateDto): List<CombinationTableDto> {
-        val userInput = getUserInput(calculateDto)
-        val combinations = combinationCalculator.findCombinations(userInput)
-        return combinations.map { toTableDto(it) }
+        return try {
+            val userInput = getUserInput(calculateDto)
+            val combinations = combinationCalculator.findCombinations(userInput)
+            if (combinations.isNotEmpty()) {
+                combinations.map { toTableDto(it) }
+            } else {
+                val table = toTableDto(fromMaxCombination(calculateDto))
+                val msg = "Even when we use the maximum amount for each selected food, the totals do not reach the minimum daily values. Try increasing amounts or adding different foods."
+                listOf(table.copy(errorMessage = msg))
+            }
+        } catch (ex: Exception) {
+            val table = toTableDto(fromMaxCombination(calculateDto))
+            val msg = "Even when we use the maximum amount for each selected food, the totals do not reach the minimum daily values. Try increasing amounts or adding different foods."
+            listOf(table.copy(errorMessage = msg))
+        }
     }
 
     private fun getUserInput(calculateDto: CalculateDto): UserInput {
@@ -124,6 +137,17 @@ class AppService(
             totals = TotalsRowDto(totalMgByAmino = totalsMap),
             rdaMgByAmino = rdaMap
         )
+    }
+
+    /**
+     * Build a diagnostic combination using each food's maximum grams.
+     * This allows frontend to reuse the same table when no valid combination exists and explain shortfalls vs. daily minimums.
+     */
+    private fun fromMaxCombination(calculateDto: CalculateDto): CombinationResult {
+        val gramsByFood = calculateDto.foods.associate { dto ->
+            findFood(dto) to dto.max
+        }
+        return CombinationResult(gramsByFood)
     }
 
     fun suggest(suggest: String): List<FoodDto> {

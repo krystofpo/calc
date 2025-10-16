@@ -6,12 +6,14 @@ package com.polansky.amino.app
  * - rows: one per food with grams and mg of each amino for that food's amount
  * - totals: total mg across all foods for each amino
  * - rdaMgByAmino: daily minimum intake per amino in mg (for percentage computation)
+ * - errorMessage: optional banner to display when this is a diagnostic (fallback) result
  */
 data class CombinationTableDto(
     val aminoColumns: List<String>,
     val rows: List<FoodRowDto>,
     val totals: TotalsRowDto,
-    val rdaMgByAmino: Map<String, Double>
+    val rdaMgByAmino: Map<String, Double>,
+    val errorMessage: String? = null
 )
 
 data class FoodRowDto(

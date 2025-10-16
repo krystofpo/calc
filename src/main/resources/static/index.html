@@ -151,6 +151,15 @@ Ensure your backend is running on http://localhost:3000
             font-size: 0.85rem;
             margin-left: 6px;
         }
+        .error-banner {
+            border: 1px solid #fecaca;
+            background: #fef2f2;
+            color: #b91c1c;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -372,6 +381,10 @@ Ensure your backend is running on http://localhost:3000
             const pct = rdaMg > 0 ? Math.round((mg / rdaMg) * 100) : 0;
             const td = document.createElement('td');
             td.textContent = `${grams.toFixed(2)} g (${pct}%)`;
+            if (pct < 100) {
+                td.style.color = '#b91c1c'; // highlight totals under minimum
+                td.style.fontWeight = '700';
+            }
             trt.appendChild(td);
         });
 
@@ -383,6 +396,14 @@ Ensure your backend is running on http://localhost:3000
 
     function displayResults(results) {
         resultsSection.innerHTML = '';
+
+        // Show a friendly diagnostic message when backend returned max-grams fallback
+        if (results.length === 1 && results[0].errorMessage) {
+            const banner = document.createElement('div');
+            banner.className = 'error-banner';
+            banner.textContent = results[0].errorMessage;
+            resultsSection.appendChild(banner);
+        }
 
         results.forEach((combo, i) => {
             const card = document.createElement('div');
