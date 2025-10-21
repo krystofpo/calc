@@ -86,6 +86,15 @@ Ensure your backend is running on http://localhost:3000
         .suggestions div:hover {
             background: #f1f5f9;
         }
+        .suggestions div.active {
+            background: #eef2ff;
+        }
+        .helper-text {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-top: -0.25rem;
+            margin-bottom: 0.25rem;
+        }
         .results {
             margin-top: 2rem;
         }
@@ -189,6 +198,7 @@ Ensure your backend is running on http://localhost:3000
     const resultsSection = document.getElementById('results-section');
     const limitMsgEl = document.getElementById('limit-msg');
     const validationMsgEl = document.getElementById('validation-msg');
+    const suggestionState = new Map(); // idx -> { items: [], active: 0 }
 
     // Track a unique index for each created group so removals don't break IDs
     let nextIdx = 0;
@@ -210,7 +220,58 @@ Ensure your backend is running on http://localhost:3000
         nameInput.placeholder = 'Type food name';
         nameInput.className = 'food-input';
         nameInput.autocomplete = 'off';
-        nameInput.addEventListener('input', debounce(e => { container.dataset.foodId = ''; fetchSuggestions(e.target.value, idx); }, 300));
+        // ARIA combobox attributes
+        nameInput.setAttribute('role', 'combobox');
+        nameInput.setAttribute('aria-autocomplete', 'list');
+        nameInput.setAttribute('aria-expanded', 'false');
+        nameInput.setAttribute('aria-controls', `suggestions-${idx}`);
+        // Inline helper text to guide selection
+        const helperEl = document.createElement('div');
+        helperEl.id = `helper-${idx}`;
+        helperEl.className = 'helper-text';
+        helperEl.style.display = 'none';
+        helperEl.textContent = 'Select a food from the list to confirm';
+        // Input handlers
+        nameInput.addEventListener('input', debounce(e => {
+            container.dataset.foodId = '';
+            const v = e.target.value.trim();
+            // Show helper when there is text but no selection
+            helperEl.style.display = v ? 'block' : 'none';
+            fetchSuggestions(v, idx);
+        }, 300));
+        nameInput.addEventListener('keydown', (ev) => {
+            const state = suggestionState.get(idx) || { items: [], active: 0 };
+            const items = state.items || [];
+            if (ev.key === 'ArrowDown') {
+                if (!items.length) return;
+                ev.preventDefault();
+                const next = (state.active + 1) % items.length;
+                setActiveOption(idx, next);
+            } else if (ev.key === 'ArrowUp') {
+                if (!items.length) return;
+                ev.preventDefault();
+                const next = (state.active - 1 + items.length) % items.length;
+                setActiveOption(idx, next);
+            } else if (ev.key === 'Enter') {
+                const st = suggestionState.get(idx);
+                if (st && st.items && st.items.length) {
+                    ev.preventDefault();
+                    // If there is an active option, select it, otherwise select first
+                    const selIndex = Number.isInteger(st.active) ? st.active : 0;
+                    const food = st.items[selIndex] || st.items[0];
+                    if (food) selectSuggestion(idx, food);
+                } else {
+                    // Try exact match auto-select on Enter when there are no suggestions rendered yet
+                    tryExactMatch(idx);
+                }
+            } else if (ev.key === 'Escape') {
+                hideSuggestions(idx);
+            }
+        });
+        nameInput.addEventListener('blur', () => {
+            // On blur, if text exactly matches an available item, auto-select it; otherwise keep helper visible
+            tryExactMatch(idx);
+        });
 
         const suggestionsBox = document.createElement('div');
         suggestionsBox.id = `suggestions-${idx}`;
@@ -223,6 +284,8 @@ Ensure your backend is running on http://localhost:3000
         minInput.min = '0';
         minInput.placeholder = 'Min g';
         minInput.className = 'range-input';
+        // Live validation: on typing, if value is a non-empty integer, clear invalid and hide banner if no other errors
+        minInput.addEventListener('input', () => validateNumberField(minInput));
 
         const maxInput = document.createElement('input');
         maxInput.type = 'number';
@@ -230,6 +293,8 @@ Ensure your backend is running on http://localhost:3000
         maxInput.min = '0';
         maxInput.placeholder = 'Max g';
         maxInput.className = 'range-input';
+        // Live validation for max as well
+        maxInput.addEventListener('input', () => validateNumberField(maxInput));
 
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
@@ -248,7 +313,7 @@ Ensure your backend is running on http://localhost:3000
             }
         });
 
-        container.append(nameInput, suggestionsBox, minInput, maxInput, removeBtn);
+        container.append(nameInput, helperEl, suggestionsBox, minInput, maxInput, removeBtn);
         foodListEl.appendChild(container);
 
         // If we just reached the limit, disable the Add button and inform the user
@@ -303,31 +368,112 @@ Ensure your backend is running on http://localhost:3000
 
     function toggleSuggestions(idx, foods) {
         const box = document.getElementById(`suggestions-${idx}`);
+        const container = document.getElementById(`food-group-${idx}`);
+        const nameInput = container.querySelector('input.food-input');
         box.innerHTML = '';
         if (!foods.length) {
-            box.style.display = 'none';
+            hideSuggestions(idx);
+            suggestionState.set(idx, { items: [], active: 0 });
             return;
         }
-        foods.forEach(food => {
+        // Update state and ARIA
+        suggestionState.set(idx, { items: foods, active: 0 });
+        box.setAttribute('role', 'listbox');
+        foods.forEach((food, i) => {
             const div = document.createElement('div');
             div.textContent = food.name;
+            div.id = `option-${idx}-${i}`;
+            div.setAttribute('role', 'option');
             div.addEventListener('click', () => selectSuggestion(idx, food));
             box.appendChild(div);
         });
         box.style.display = 'block';
+        nameInput.setAttribute('aria-expanded', 'true');
+        setActiveOption(idx, 0);
+    }
+
+    function setActiveOption(idx, newIndex) {
+        const box = document.getElementById(`suggestions-${idx}`);
+        const options = Array.from(box.children);
+        const state = suggestionState.get(idx) || { items: [], active: 0 };
+        if (!options.length) return;
+        // Clamp index
+        const max = options.length - 1;
+        const i = Math.max(0, Math.min(newIndex, max));
+        options.forEach((el, j) => {
+            if (j === i) el.classList.add('active'); else el.classList.remove('active');
+        });
+        const container = document.getElementById(`food-group-${idx}`);
+        const nameInput = container.querySelector('input.food-input');
+        const activeId = options[i]?.id || '';
+        if (activeId) nameInput.setAttribute('aria-activedescendant', activeId);
+        suggestionState.set(idx, { items: state.items || [], active: i });
+    }
+
+    function hideSuggestions(idx) {
+        const box = document.getElementById(`suggestions-${idx}`);
+        if (box) box.style.display = 'none';
+        const container = document.getElementById(`food-group-${idx}`);
+        const nameInput = container?.querySelector('input.food-input');
+        if (nameInput) nameInput.setAttribute('aria-expanded', 'false');
+    }
+
+    function tryExactMatch(idx) {
+        const container = document.getElementById(`food-group-${idx}`);
+        const nameInput = container.querySelector('input.food-input');
+        const helperEl = document.getElementById(`helper-${idx}`);
+        const typed = (nameInput.value || '').trim().toLowerCase();
+        if (!typed) return;
+        const state = suggestionState.get(idx);
+        const list = state?.items || [];
+        const match = list.find(f => (f.name || '').toLowerCase() === typed);
+        if (match) {
+            selectSuggestion(idx, match);
+        } else {
+            // Keep helper visible if still not selected
+            if (helperEl) helperEl.style.display = 'block';
+        }
     }
 
     function selectSuggestion(idx, food) {
         const container = document.getElementById(`food-group-${idx}`);
         const nameInput = container.querySelector('input.food-input');
+        const helperEl = document.getElementById(`helper-${idx}`);
         nameInput.value = food.name;
         container.dataset.foodId = food.id;
-        document.getElementById(`suggestions-${idx}`).style.display = 'none';
+        nameInput.classList.remove('invalid');
+        if (helperEl) helperEl.style.display = 'none';
+        hideSuggestions(idx);
+        // If the only error was missing food selection, hide the banner now that it's fixed
+        hideValidationIfNoInvalids();
+    }
+
+    function hideValidationIfNoInvalids() {
+        const anyInvalid = document.querySelector('#food-list input.invalid');
+        if (!anyInvalid && validationMsgEl) {
+            validationMsgEl.style.display = 'none';
+        }
+    }
+
+    // Validate a number input: non-empty and integer (non-negative)
+    function validateNumberField(el) {
+        const v = (el.value || '').trim();
+        const ok = v !== '' && /^\d+$/.test(v);
+        if (ok) {
+            el.classList.remove('invalid');
+            // Ensure text returns to default black when valid
+            el.style.color = '#0f172a';
+        }
+        hideValidationIfNoInvalids();
     }
 
     function clearValidation() {
         if (validationMsgEl) validationMsgEl.style.display = 'none';
-        document.querySelectorAll('#food-list input').forEach(el => el.classList.remove('invalid'));
+        document.querySelectorAll('#food-list input').forEach(el => {
+            el.classList.remove('invalid');
+            // Reset any inline color back to default
+            el.style.color = '';
+        });
     }
 
     function showValidationMessage(msg) {
@@ -373,10 +519,14 @@ Ensure your backend is running on http://localhost:3000
             if (minVal === '' || !minInt) {
                 groupValid = false;
                 minEl.classList.add('invalid');
+                // Make invalid state clearly visible
+                minEl.style.color = '#b91c1c';
             }
             if (maxVal === '' || !maxInt) {
                 groupValid = false;
                 maxEl.classList.add('invalid');
+                // Make invalid state clearly visible
+                maxEl.style.color = '#b91c1c';
             }
 
             if (!groupValid) {
