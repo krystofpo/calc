@@ -39,4 +39,20 @@ abstract class Food {
             VALINE to valineMgPer100g,
             PROTEIN to proteinMgPer100g
         )
+
+    /**
+     * Faster accessor to avoid allocating the map for each lookup.
+     */
+    fun mgPer100gOf(aa: AminoAcid): Int = when (aa) {
+        HISTIDINE -> histidineMgPer100g
+        ISOLEUCINE -> isoleucineMgPer100g
+        LEUCINE -> leucineMgPer100g
+        LYSINE -> lysineMgPer100g
+        METHIONINE -> methionineMgPer100g
+        PHENYLALANINE -> phenylalanineMgPer100g
+        THREONINE -> threonineMgPer100g
+        TRYPTOPHAN -> tryptophanMgPer100g
+        VALINE -> valineMgPer100g
+        PROTEIN -> proteinMgPer100g
+    }
 }

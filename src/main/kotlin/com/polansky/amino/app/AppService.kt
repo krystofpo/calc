@@ -15,6 +15,16 @@ class AppService(
     val combinationCalculator: CombinationCalculator
 ) {
 
+    companion object {
+        private val AMINO_ARRAY = AminoAcid.values()
+        private val AMINO_NAMES: List<String> = AMINO_ARRAY.map { it.name }
+        private val RDA_MAP: Map<String, Double> = LinkedHashMap<String, Double>(AMINO_ARRAY.size).apply {
+            AMINO_ARRAY.forEach { aa ->
+                this[aa.name] = DailyMinimumIntake.minimumMgPerAmino[aa] ?: 0.0
+            }
+        }
+    }
+
     fun calculate(calculateDto: CalculateDto): List<ResultDto> {
         val userInput = getUserInput(calculateDto)
         val combinations = combinationCalculator.findCombinations(userInput)
@@ -103,13 +113,19 @@ class AppService(
     }
 
     private fun toTableDto(cr: CombinationResult): CombinationTableDto {
-        val aminoOrder = AminoAcid.values().map { it.name } // include PROTEIN
+        // Build rows and totals in a single pass; reuse cached amino arrays and RDA map.
+        val totalsArray = DoubleArray(AMINO_ARRAY.size) // primitive array to avoid boxing during accumulation
+
         val rows = cr.gramsByFood.map { (food, grams) ->
-            val mgByAmino = mutableMapOf<String, Double>()
-            AminoAcid.values().forEach { aa ->
-                val mgPer100 = food.mgPer100g[aa]?.toDouble() ?: 0.0
+            val mgByAmino = LinkedHashMap<String, Double>(AMINO_ARRAY.size)
+            var i = 0
+            while (i < AMINO_ARRAY.size) {
+                val aa = AMINO_ARRAY[i]
+                val mgPer100 = food.mgPer100gOf(aa).toDouble()
                 val totalMg = mgPer100 * grams / 100.0
-                mgByAmino[aa.name] = totalMg
+                mgByAmino[AMINO_NAMES[i]] = totalMg
+                totalsArray[i] += totalMg
+                i++
             }
             FoodRowDto(
                 id = food.id,
@@ -119,23 +135,18 @@ class AppService(
             )
         }
 
-        val totalsByAminoAcid = cr.totalMgByAmino()
-        val totalsMap = LinkedHashMap<String, Double>(aminoOrder.size)
-        AminoAcid.values().forEach { aa ->
-            totalsMap[aa.name] = totalsByAminoAcid[aa] ?: 0.0
-        }
-
-        // RDA per amino in mg for percentage
-        val rdaMap = LinkedHashMap<String, Double>(aminoOrder.size)
-        AminoAcid.values().forEach { aa ->
-            rdaMap[aa.name] = DailyMinimumIntake.minimumMgPerAmino[aa] ?: 0.0
+        val totalsMap = LinkedHashMap<String, Double>(AMINO_ARRAY.size)
+        var i = 0
+        while (i < AMINO_ARRAY.size) {
+            totalsMap[AMINO_NAMES[i]] = totalsArray[i]
+            i++
         }
 
         return CombinationTableDto(
-            aminoColumns = aminoOrder,
+            aminoColumns = AMINO_NAMES,
             rows = rows,
             totals = TotalsRowDto(totalMgByAmino = totalsMap),
-            rdaMgByAmino = rdaMap
+            rdaMgByAmino = RDA_MAP
         )
     }
 
