@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class Pumpkin : Food() {
-    override val id = 8L
+    override val id = FoodName.PUMPKIN
     override val name = "pumpkin seed"
     override val link = "https://fdc.nal.usda.gov/food-details/170556/nutrients"
     override val histidineMgPer100g = 780

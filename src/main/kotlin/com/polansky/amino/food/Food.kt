@@ -8,7 +8,7 @@ import com.polansky.amino.AminoAcid.*
  * Subclasses must override each amino's mg per 100g.
  */
 abstract class Food {
-    abstract val id: Long //TODO how to assert uniquness? entities? hashcode?
+    abstract val id: FoodName
     abstract val name: String
     abstract val link: String
     abstract val histidineMgPer100g: Int
@@ -54,5 +54,15 @@ abstract class Food {
         TRYPTOPHAN -> tryptophanMgPer100g
         VALINE -> valineMgPer100g
         PROTEIN -> proteinMgPer100g
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Food) return false
+        return id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
     }
 }

@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class Peanut : Food() {
-    override val id = 9L
+    override val id = FoodName.PEANUT
     override val name = "peanut"
     override val link = "https://fdc.nal.usda.gov/food-details/172430/nutrients"
     override val histidineMgPer100g = 652

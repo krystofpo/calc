@@ -4,7 +4,7 @@ package com.polansky.amino
  * Hardcoded daily minimum intake per amino acid, in milligrams (mg).
  */
 object DailyMinimumIntake {
-    var minimumMgPerAmino: Map<AminoAcid, Double> = mapOf(
+    val minimumMgPerAmino: Map<AminoAcid, Double> = mapOf(
 
         //for amino acids, the source is
         //https://iris.who.int/server/api/core/bitstreams/b7c5ec43-bc59-4b38-b702-3f0e96a06fa1/content page 163/284, table 23

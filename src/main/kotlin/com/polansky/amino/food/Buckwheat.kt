@@ -1,5 +1,6 @@
 package com.polansky.amino.food
 
+import com.polansky.amino.food.FoodName.BUCKWHEAT
 import org.springframework.stereotype.Component
 
 /**
@@ -7,7 +8,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class Buckwheat : Food() {
-    override val id                        = 5L
+    override val id                        = BUCKWHEAT
     override val name                      = "Buckwheat groats raw"
     override val link = "https://fdc.nal.usda.gov/food-details/170286/nutrients"
     // Essential amino acids (mg per 100 g)

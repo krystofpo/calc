@@ -1,8 +1,8 @@
 package com.polansky.amino.controller
 
 
-import com.polansky.amino.app.AppService
-import com.polansky.amino.app.CombinationTableDto
+import com.polansky.amino.service.AppService
+import com.polansky.amino.dto.CombinationTableDto
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 
-data class FoodDto(val id: Long, val name: String)
+data class FoodDto(val id: String, val name: String)
 
 @RestController
 @RequestMapping("/api")
@@ -34,6 +34,6 @@ class ApiController(val appService: AppService) {
 
 data class CalculateDto(val foods: List<CalcFoodDto>)
 
-data class CalcFoodDto(val id: Long,val name: String, val min: Int, val max: Int)
+data class CalcFoodDto(val id: String,val name: String, val min: Int, val max: Int)
 
 private val log = KotlinLogging.logger {}

@@ -1,6 +1,7 @@
 package com.polansky.amino
 
 import com.polansky.amino.food.Food
+import com.polansky.amino.food.FoodName
 import spock.lang.Specification
 
 import static com.polansky.amino.AminoAcid.*
@@ -8,8 +9,7 @@ import static com.polansky.amino.AminoAcid.*
 class CombinationResultSpec extends Specification {
 
     static class TestFood extends Food {
-        long id; String name; String link=""
-        @Override long getId(){return id}
+        FoodName id; String name; String link=""
         @Override String getName(){return name}
         @Override String getLink(){return link}
         @Override int getHistidineMgPer100g(){return 100}
@@ -26,8 +26,8 @@ class CombinationResultSpec extends Specification {
 
     def "totalMgByAmino sums per food correctly"() {
         given:
-        def f1 = new TestFood(id:1, name:"F1")
-        def f2 = new TestFood(id:2, name:"F2")
+        def f1 = new TestFood(id:FoodName.TEST1, name:"F1")
+        def f2 = new TestFood(id:FoodName.TEST2, name:"F2")
         // grams: 100g of f1 => values as-is; 50g of f2 => half
         def cr = new CombinationResult([(f1):100, (f2):50])
 

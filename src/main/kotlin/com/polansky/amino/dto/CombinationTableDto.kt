@@ -1,4 +1,4 @@
-package com.polansky.amino.app
+package com.polansky.amino.dto
 
 /**
  * DTO for rendering a single combination as a table.
@@ -17,7 +17,7 @@ data class CombinationTableDto(
 )
 
 data class FoodRowDto(
-    val id: Long,
+    val id: String,
     val name: String,
     val grams: Int,
     val mgByAmino: Map<String, Double>

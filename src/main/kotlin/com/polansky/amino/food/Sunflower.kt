@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class Sunflower : Food() {
-    override val id = 7L
+    override val id = FoodName.SUNFLOWER
     override val name = "sunflower seed"
     override val link = "https://fdc.nal.usda.gov/food-details/170562/nutrients"
     override val histidineMgPer100g = 632

@@ -13,9 +13,8 @@ data class FoodAmountConstraint(
 )
 
 /**
- * User preferences: food constraints and how many combinations to find.
+ * User preferences: food constraints
  */
 data class UserInput(
     val constraints: List<FoodAmountConstraint>,
-    val maxResults: Int = 5
 )

@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class Tofu : Food() {
-    override val id = 10L
+    override val id = FoodName.TOFU
     override val name = "tofu"
     override val link = "https://fdc.nal.usda.gov/food-details/172475/nutrients , https://fdc.nal.usda.gov/food-details/174297/nutrients, https://fdc.nal.usda.gov/food-details/172448/nutrients"
     override val histidineMgPer100g = 225

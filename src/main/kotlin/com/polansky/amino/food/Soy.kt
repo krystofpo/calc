@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class Soy : Food() {
-    override val id = 11L
+    override val id = FoodName.SOY
     override val name = "soy beans, mature seeds, dry roasted"
     override val link = "https://fdc.nal.usda.gov/food-details/172441/nutrients"
     override val histidineMgPer100g = 1000

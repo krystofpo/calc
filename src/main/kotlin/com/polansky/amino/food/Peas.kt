@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class Peas : Food() {
-    override val id = 6L
+    override val id = FoodName.PEAS
     override val name = "Peas, green, split, mature seeds, raw"
     override val link = "https://fdc.nal.usda.gov/fdc-app.html#/food-details/172428/nutrients"
     override val histidineMgPer100g = 586

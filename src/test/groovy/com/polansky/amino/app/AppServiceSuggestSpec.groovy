@@ -1,17 +1,19 @@
 package com.polansky.amino.app
 
 import com.polansky.amino.CombinationCalculator
-import com.polansky.amino.controller.CalcFoodDto
-import com.polansky.amino.controller.CalculateDto
+import com.polansky.amino.MinimumCalculator
 import com.polansky.amino.food.*
+import com.polansky.amino.service.AppService
 import spock.lang.Specification
 
 class AppServiceSuggestSpec extends Specification {
+    MinimumCalculator minimumCalculator = Mock()
+
 
     def "suggest filters case-insensitively and returns id+name only"() {
         given:
         def foods = [new Oats(), new Rice(), new Buckwheat(), new Soy(), new Peas()]
-        def service = new AppService(foods, new CombinationCalculator())
+        def service = new AppService(foods, new CombinationCalculator(minimumCalculator))
 
         when:
         def result = service.suggest(query)

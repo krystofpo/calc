@@ -20,4 +20,14 @@ class FoodSpec extends Specification {
             assert fromMethod[aa] == fromMap[aa]
         }
     }
+
+    def "equals and hashcode works"(){
+        given:
+        def rice1 = new Rice()
+        def rice2 = new Rice()
+
+        expect:
+        rice1.equals(rice2)
+        rice1.hashCode() == rice2.hashCode()
+    }
 }

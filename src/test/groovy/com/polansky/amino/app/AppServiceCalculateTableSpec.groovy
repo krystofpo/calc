@@ -2,18 +2,21 @@ package com.polansky.amino.app
 
 import com.polansky.amino.AminoAcid
 import com.polansky.amino.CombinationCalculator
-import com.polansky.amino.DailyMinimumIntake
+import com.polansky.amino.MinimumCalculator
 import com.polansky.amino.controller.CalcFoodDto
 import com.polansky.amino.controller.CalculateDto
 import com.polansky.amino.food.*
+import com.polansky.amino.service.AppService
 import spock.lang.Specification
 
 class AppServiceCalculateTableSpec extends Specification {
 
+    MinimumCalculator minimumCalculator = Mock()
+
     def "calculateTable returns valid table with correct totals for a solvable input"() {
         given: "AppService with real foods and calculator"
         def foods = [new Chickpeas(), new Oats(), new Rice(), new Buckwheat(), new Soy(), new Peas(), new Eggs(), new Sunflower(), new Pumpkin(), new Peanut(), new Tofu()]
-        def service = new AppService(foods, new CombinationCalculator())
+        def service = new AppService(foods, new CombinationCalculator(minimumCalculator))
         and: "input that certainly meets daily minima (single food, fixed grams)"
         def dto = new CalculateDto([
                 new CalcFoodDto(1L, "Chickpeas", 500, 500) // 500g chickpeas easily exceeds all minima
@@ -50,7 +53,7 @@ class AppServiceCalculateTableSpec extends Specification {
     def "calculateTable returns diagnostic single table with errorMessage when no combination exists"() {
         given:
         def foods = [new Rice()] // weak protein source alone
-        def service = new AppService(foods, new CombinationCalculator())
+        def service = new AppService(foods, new CombinationCalculator(minimumCalculator))
         and:
         def dto = new CalculateDto([
                 new CalcFoodDto(4L, "Rice", 1, 1) // impossible to meet minima
