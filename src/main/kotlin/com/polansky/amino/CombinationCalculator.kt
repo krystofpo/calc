@@ -8,7 +8,7 @@ import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 
 val STEP_GRAMS = 5
-val MAX_COMBOS = 1_000 //TODO asi zmensit ? nebo prohledat cely stavovy prostor?
+val MAX_COMBOS = 10 //TODO asi zmensit ? nebo prohledat cely stavovy prostor?
 val MAX_RESULTS = 5
 val DEFAULT_MAX_AMOUNT: Int = 100 //TODO
 
@@ -40,6 +40,7 @@ class CombinationCalculator(val minimumCalculator: MinimumCalculator,
             if (minimumCalculator.isMoreThanMinimum(currentGrams.associate { it.food to it.amount})) {
                 results += CombinationResult(currentGrams.associate { it.food to it.amount })
                 if (results.size >= MAX_COMBOS) {
+                    log.warn { "MAX_COMBOS" }
                     break
                 }
 
