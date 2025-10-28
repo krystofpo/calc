@@ -83,15 +83,16 @@ dependencies {
 
 	// Testing
 	// Spock on JUnit Platform
-	testImplementation("org.spockframework:spock-core:2.3-groovy-4.0")
-	testImplementation("org.spockframework:spock-spring:2.3-groovy-4.0")
+//	testImplementation("org.spockframework:spock-core:2.3-groovy-4.0")
+    testImplementation("org.spockframework:spock-spring:2.4-M4-groovy-4.0")
 	// Spring Boot starter test (Jupiter, AssertJ, MockMvc, etc.)
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+//    runtimeOnly("org.spockframework:spock-junit4:2.3-groovy-4.0")
 	// Optional helpers
-	testImplementation("org.testcontainers:spock:1.20.1")
-	testImplementation("io.github.joke:spock-mockable:2.3.2")
-	testImplementation("io.netty:netty-handler:4.1.117.Final")
-	testImplementation("org.bouncycastle:bcpkix-jdk18on:1.80")
+//	testImplementation("org.testcontainers:spock:1.20.1")
+//	testImplementation("io.github.joke:spock-mockable:2.3.2")
+//	testImplementation("io.netty:netty-handler:4.1.117.Final")
+//	testImplementation("org.bouncycastle:bcpkix-jdk18on:1.80")
 	testImplementation("org.apache.groovy:groovy-json:4.0.22")
 }
 
