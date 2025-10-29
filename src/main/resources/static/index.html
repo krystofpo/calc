@@ -571,30 +571,37 @@ Ensure your backend is running on http://localhost:3000
         thead.appendChild(htr);
         table.appendChild(thead);
 
-        // Color scale helper 0..1 => red→green
-        function pctColor(p) {
-            const t = Math.max(0, Math.min(1, p));
-            const r = Math.round(255 * (1 - t));
-            const g = Math.round(180 * t);
-            return `rgb(${r},${g},120)`;
-        }
-
-        // Determine baseline for row coloring using PROTEIN share
-        const maxRowProtein = combo.rows.reduce((m, r) => {
-            const v = r.mgByAmino['PROTEIN'] || 0;
-            return Math.max(m, v);
-        }, 0);
-
         // Body rows
         const tbody = document.createElement('tbody');
-        combo.rows.forEach(row => {
+
+        // Compute a highlight intensity per row without any new calculations beyond the DTO data.
+        // Prefer PROTEIN grams if present; otherwise fall back to sum of amino grams for that row.
+        const proteinKey = 'PROTEIN';
+        const rowScores = combo.rows.map(row => {
+            const map = row.grmsByAmino ? row.grmsByAmino : row.gramsByAmino; // backward compat key typo guard
+            let score = (map && typeof map[proteinKey] === 'number') ? map[proteinKey] : 0;
+            if (!score) {
+                // fallback: sum of all amino grams available on this row
+                if (map) {
+                    score = combo.aminoColumns.reduce((acc, a) => acc + (Number(map[a]) || 0), 0);
+                }
+            }
+            return Number(score) || 0;
+        });
+        const maxScore = rowScores.reduce((m, v) => Math.max(m, v), 0);
+
+        combo.rows.forEach((row, idx) => {
             const tr = document.createElement('tr');
 
-            // Uniform row color based on protein proportion
-            const rowProtein = row.mgByAmino['PROTEIN'] || 0;
-            if (maxRowProtein > 0) {
-                const p = rowProtein / maxRowProtein;
-                tr.style.background = pctColor(p);
+            // Apply soft row highlight proportional to protein (or total amino) grams
+            if (maxScore > 0) {
+                const intensity = Math.max(0.06, Math.min(0.28, (rowScores[idx] / maxScore) * 0.28));
+                // Calm blue background; header/footer keep their own backgrounds
+                tr.style.backgroundColor = `rgba(37, 99, 235, ${intensity})`; // #2563eb with varying alpha
+                // Improve text contrast slightly on darker backgrounds
+                if (intensity > 0.18) {
+                    tr.style.color = '#0b1220';
+                }
             }
 
             // Food name
@@ -605,15 +612,15 @@ Ensure your backend is running on http://localhost:3000
 
             // Amount with " g"
             const tdg = document.createElement('td');
-            tdg.textContent = `${row.grams} g`;
+            tdg.textContent = `${Number(row.grams).toFixed(0)} g`;
             tr.appendChild(tdg);
 
-            // Amino/protein values in grams with " g"
+            // Amino/protein values provided by backend already in grams (no calculations here)
             combo.aminoColumns.forEach(a => {
-                const mg = row.mgByAmino[a] ?? 0;
-                const grams = mg / 1000;
+                const grams = row.grmsByAmino ? row.grmsByAmino[a] : row.gramsByAmino[a]; // backward compat key typo guard
+                const val = grams ?? 0;
                 const td = document.createElement('td');
-                td.textContent = `${grams.toFixed(2)} g`;
+                td.textContent = `${Number(val).toFixed(2)} g`;
                 tr.appendChild(td);
             });
 
@@ -630,20 +637,18 @@ Ensure your backend is running on http://localhost:3000
         tlabel.textContent = 'Total';
         trt.appendChild(tlabel);
 
-        // Amount column: sum of grams with " g"
-        const totalGrams = combo.rows.reduce((sum, r) => sum + (r.grams || 0), 0);
+        // Amount column: total grams provided by backend
         const tAmount = document.createElement('td');
-        tAmount.textContent = `${totalGrams} g`;
+        tAmount.textContent = `${Number(combo.totals.totalGrams).toFixed(0)} g`;
         trt.appendChild(tAmount);
 
         // Amino/protein totals in grams with " g" and % of daily minimum intake
+        // Now both totals and %RDA are provided by the backend DTO.
         combo.aminoColumns.forEach(a => {
-            const mg = combo.totals.totalMgByAmino[a] ?? 0;
-            const grams = mg / 1000;
-            const rdaMg = (combo.rdaMgByAmino && combo.rdaMgByAmino[a]) ? combo.rdaMgByAmino[a] : 0;
-            const pct = rdaMg > 0 ? Math.round((mg / rdaMg) * 100) : 0;
+            const grams = combo.totals.totalGramsByAmino[a] ?? 0;
+            const pct = combo.totals.percentRdaByAmino[a] ?? 0;
             const td = document.createElement('td');
-            td.textContent = `${grams.toFixed(2)} g (${pct}%)`;
+            td.textContent = `${Number(grams).toFixed(2)} g (${Number(pct).toFixed(0)}%)`;
             if (pct < 100) {
                 td.style.color = '#b91c1c'; // highlight totals under minimum
                 td.style.fontWeight = '700';

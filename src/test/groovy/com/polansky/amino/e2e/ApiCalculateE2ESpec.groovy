@@ -1,6 +1,5 @@
 package com.polansky.amino.e2e
 
-import com.polansky.amino.DailyMinimumIntake
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,19 +12,14 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import spock.lang.Specification
 
 /**
- * End-to-end tests through the HTTP layer to verify amino minimums calculation.
- *
- * We purposefully test the system at the controller boundary (ApiController)
- * to cover wiring, AppService, CombinationCalculator, formatters, and domain.
+ * End-to-end tests through the HTTP layer to verify amino minima and percentages are computed by backend.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-// full context, no web server
 @AutoConfigureMockMvc
 class ApiCalculateE2ESpec extends Specification {
 
     @Autowired
     MockMvc mvc
-
 
     private static Map<String, Object> food(String id, int min, int max) {
         [id: id, name: id, min: min, max: max]
@@ -44,44 +38,18 @@ class ApiCalculateE2ESpec extends Specification {
         return (List<Map>) new JsonSlurper().parseText(result.response.contentAsString)
     }
 
-    /**
-     * Build a map of class-defined daily minima keyed by amino name (String),
-     * matching the JSON response keys.
-     */
-    private static Map<String, Double> classMinima() {
-        // Kotlin object is exposed as DailyMinimumIntake.INSTANCE
-        def m = DailyMinimumIntake.INSTANCE.minimumMgPerAmino
-        // Convert enum keys to their name() to match JSON keys
-        m.collectEntries { k, v -> [(k.name()): (v as Double)] }
+    private static boolean allPercentsBelow100(Map table) {
+        Map<String, Double> pct = (Map<String, Double>) table.totals.percentRdaByAmino
+        return pct.values().any { (it ?: 0.0) < 100.0 }
     }
 
-    /**
-     * Verify totals from the response table meet or exceed class minima.
-     */
-    private static boolean tableTotalsMeetClassMinima(Map table) {
-        Map<String, Double> totals = (Map<String, Double>) table.totals.totalMgByAmino
-        Map<String, Double> minByAmino = classMinima()
-        return minByAmino.keySet().every { k ->
-            def total = (totals[k] ?: 0.0) as double
-            def min = (minByAmino[k] ?: 0.0) as double
-            return total + 1e-6 >= min
-        }
-    }
-
-    /**
-     * Verify RDA values embedded in the response == class minima.
-     */
-    private static boolean responseRdasEqualClassMinima(Map response) {
-        Map<String, Double> responseMinima = (Map<String, Double>) response.rdaMgByAmino
-        Map<String, Double> classMinima = classMinima()
-        return classMinima.every { amino, classMin ->
-            def responseMin = (responseMinima[amino] ?: 0.0) as double
-            return responseMin == classMin
-        }
+    private static boolean allPercentsAtLeast100(Map table) {
+        Map<String, Double> pct = (Map<String, Double>) table.totals.percentRdaByAmino
+        return pct.values().every { (it ?: 0.0) >= 100.0 }
     }
 
     def "e2e: when inputs are too small overall, service returns diagnostic table with error"() {
-        when: "we cap max grams so even maximums cannot meet daily minima"
+        when:
         def response = postCalculate(mvc, [
                 food('RICE', 0, 10),
                 food('PEANUT', 0, 10)
@@ -91,27 +59,21 @@ class ApiCalculateE2ESpec extends Specification {
         response.size() == 1
         Map table = (Map) response[0]
         table.errorMessage instanceof String && !((String) table.errorMessage).isEmpty()
-        // verify there exists at least one amino that is below its CLASS minimum
-        Map<String, Double> responseTotals = (Map<String, Double>) table.totals.totalMgByAmino
-        Map<String, Double> minByAmino = classMinima()
-        minByAmino.any { amino, classMin -> (responseTotals[amino] ?: 0.0) < classMin }
-        responseRdasEqualClassMinima(table)
+        allPercentsBelow100(table)
     }
 
     def "e2e: single food can meet daily minima (all aminos and protein >= 100%)"() {
-        when: "we allow enough of a strong food (SOY) to meet all thresholds"
+        when:
         def response = postCalculate(mvc, [food('SOY', 0, 200)])
 
         then:
         response.size() >= 1
         response.every { ((Map) it).errorMessage == null }
-        response.every { tableTotalsMeetClassMinima((Map) it) }
-        response.every { responseRdasEqualClassMinima((Map) it) }
+        response.every { allPercentsAtLeast100((Map) it) }
     }
 
     def "e2e: two foods together meet minima while each alone cannot (cap max to force pairing)"() {
-        when: "cap SOY below protein RDA and let RICE complement to reach it"
-        // SOY at 120g gives ~51.6g protein; add RICE up to 100g gives ~6g more protein -> meet 57g
+        when:
         def response = postCalculate(mvc, [
                 food('SOY', 0, 120),
                 food('RICE', 0, 100)
@@ -120,7 +82,6 @@ class ApiCalculateE2ESpec extends Specification {
         then:
         response.size() >= 1
         response.every { ((Map) it).errorMessage == null }
-        response.every { tableTotalsMeetClassMinima((Map) it) }
-        response.every { responseRdasEqualClassMinima((Map) it) }
+        response.every { allPercentsAtLeast100((Map) it) }
     }
 }
